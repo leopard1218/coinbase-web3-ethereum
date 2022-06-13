@@ -1,4 +1,3 @@
-import { ethers } from "ethers";
 import { NO_ETH_BROWSER_WALLET } from '../constants/error';
 
 const startPayment = async ({ setError, handleNewTx, ether, addr }: StartPayment) => {
@@ -6,17 +5,17 @@ const startPayment = async ({ setError, handleNewTx, ether, addr }: StartPayment
       if (!window.ethereum)
         throw new Error(NO_ETH_BROWSER_WALLET);
   
-      const provider = new ethers.providers.Web3Provider(window.ethereum);
-      const signer = provider.getSigner();
-      const tx = await signer.sendTransaction({
-        to: addr,
-        value: ethers.utils.parseEther(ether)
+        const listAccs = await window.web3.eth.getAccounts();
+        const tx = await window.web3.eth.sendTransaction({
+          from: listAccs[0],
+          to: addr,
+          value: window.web3.utils.toWei(ether, 'ether')
       });
-      
-      const gasPrice = ethers.utils.formatEther(Number(tx.gasPrice))
-      const value = ethers.utils.formatEther(tx.value)
-
-      handleNewTx({ hash: tx.hash, gasPrice, value });
+  
+        const gasPrice = window.web3.utils.fromWei(tx.gasUsed.toString());
+        const value = ether
+  
+        handleNewTx({ hash: tx.transactionHash, gasPrice, value });
     } catch (err: any) {
       setError(err.message);
     }

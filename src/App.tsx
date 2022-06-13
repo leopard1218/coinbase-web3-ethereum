@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { ethers } from "ethers";
+import Web3 from "web3";
 import Header from "./components/Header";
 import Title from "./components/Title";
 import CurrentBalance from "./components/CurrentBalance";
@@ -43,25 +43,23 @@ export default function App() {
 
   const handleInitialConnection = async (account: string) => {
     setSiteConnected(true);
-    const provider = new ethers.providers.Web3Provider(window.ethereum);
-    const balance = await provider.getBalance(account);
-    const formattedBalance = ethers.utils.formatEther(balance);
+    window.web3 = new Web3(window.ethereum);
+    const balance = await window.web3.eth.getBalance(account);
+    const formattedBalance = await window.web3.utils.fromWei(balance);
     if (formattedBalance) setBalance(formattedBalance.toString());
   };
 
   useEffect(() => {
     const isBrowserWalletConnected = async () => {
-      if (!window.ethereum)
-        throw new Error(NO_ETH_BROWSER_WALLET);
+      if (!window.ethereum) throw new Error(NO_ETH_BROWSER_WALLET);
 
-        const provider = new ethers.providers.Web3Provider(window.ethereum);
-        const accounts = await provider.listAccounts();
-        if(accounts?.length > 0) {
-          const account = accounts[0];
-          await handleInitialConnection(account);
-        }
-      
-    }
+      window.web3 = new Web3(window.ethereum);
+      const accounts = await window.web3.eth.getAccounts();
+      if (accounts?.length > 0) {
+        const account = accounts[0];
+        await handleInitialConnection(account);
+      }
+    };
     try {
       isBrowserWalletConnected();
     } catch (err: any) {
@@ -71,19 +69,17 @@ export default function App() {
 
   async function handleBtnConnectSiteClick() {
     try {
-      if (!window.ethereum)
-        throw new Error(NO_ETH_BROWSER_WALLET); 
+      if (!window.ethereum) throw new Error(NO_ETH_BROWSER_WALLET);
 
-        const accounts = await window.ethereum.request({
-          method: "eth_requestAccounts",
-        });
-        const account = accounts[0];
-        if (account) {
-          await handleInitialConnection(account);
-        } else {
-          throw new Error(FAILED_TO_CONNECT);
-        }
-
+      const accounts = await window.ethereum.request({
+        method: "eth_requestAccounts",
+      });
+      const account = accounts[0];
+      if (account) {
+        await handleInitialConnection(account);
+      } else {
+        throw new Error(FAILED_TO_CONNECT);
+      }
     } catch (err: any) {
       setError(err.message);
     }
